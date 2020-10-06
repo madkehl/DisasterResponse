@@ -4,23 +4,37 @@ from sqlalchemy import create_engine
 
 import pandas as pd
 import numpy as np
+import pickle
 
 from nltk import pos_tag
 from nltk.tokenize import word_tokenize
 import nltk
 
-from sklearn import svm
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.pipeline import Pipeline
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.decomposition import LatentDirichletAllocation
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import GridSearchCV
+from sklearn.metrics import precision_recall_fscore_support
 
 lemma = nltk.wordnet.WordNetLemmatizer()
 
 
 def load_data(database_filepath):
+    '''
+    INPUT: data file path
+    OUTPUT: X, Y (numerical for category), category_names
+    
+    STEPS:  
+    1. reads in DisasterResponse db
+    2. cleans text in messages and inserts in new column
+    3. drops non-category columns from Y dataframe
+    4. Y dataframe is transformed from wide to long format to better fit classifers
+    5. It seems that there are many X vars with multiple Y vars, so X was re-merged with Y to reflect that
+    6. Y var of interest is cast as a category and encoded with numerical values
+    '''
     engine = create_engine('sqlite:///data/DisasterResponse.db')
     df = pd.read_sql_table('data/DisasterResponse.db', engine)
     clean_messages = []
@@ -54,7 +68,7 @@ def tokenize (txt):
         2. tokenizes and pos_tags
         3. lemmatizes all nouns
         4. doesn't lemmatize adj/adv bc they don't change
-        5. only appends and lemmatizes longer verbs (theory that shorter verb forms are less regular and therefore more likely to be common words/stop words)
+        5. only appends and lemmatizes longer verbs (theory that shorter verb forms are less regular and therefore more              likely to be common words/stop words)
     Chose to not use stopword list because it can be implemented from tfidf.
     POS_tagging can make this slow, but believe it is worth it for eventual output
     '''
@@ -76,17 +90,26 @@ def tokenize (txt):
 
 
 def build_model():
+    '''
+    INPUT: none
+    
+    OUTPUT: GridSearchCV obj
+    
+    In the interest of time, only min samples split and max features are varied, for Random Forests
+    '''
     parameters = {
-        'scaler__with_mean': [True, False],
-        'clf__kernel': ['linear', 'rbf', 'sigmoid'],
-        'clf__C':[0.001, 0.1, 1, 10, 100],
-        'clf__gamma': np.arange(0.1, 0.9, 0.05)
+        #originally included 'True', but this is not possible because raw tfidf
+        #is sparse.  Might be worth trying adding some kind of decomposition like
+        #lda or nmf to address this
+        'scaler__with_mean': [False],
+        'clf__min_samples_split': np.arange(2, 100, 10),
+        'clf__max_features': np.arange(5, 100, 20)
         }
     
     pipeline = Pipeline([
         ('tfidf_vec', TfidfVectorizer()),
         ('scaler', StandardScaler()),
-        ('clf', svm.SVC()),
+        ('clf', RandomForestClassifier()),
         ])
     cv = GridSearchCV(pipeline, param_grid = parameters)
     
@@ -95,19 +118,31 @@ def build_model():
 
 
 def evaluate_model(model, X_test, Y_test, category_names):
-    y_pred = model.predict(Y_test)
-    confusion_mat = confusion_matrix(y_test, y_pred, labels=category_names)
-    accuracy = (y_pred == y_test).mean()
+    '''
+    INPUT:
+    cv model, X_test, Y_test, list of category names
     
-    print("Labels:", category_names)
-    print("Confusion Matrix:\n", confusion_mat)
-    print("Accuracy:", accuracy)
+    OUTPUT:
+    precision, f1 score, recall for each category
+    '''
+    y_pred = model.predict(Y_test)
+    prfs = precision_recall_fscore_support(y_true, y_pred, average=None, labels=category_names)
+    prfs_df = pd.DataFrame(prfs_df)
+    print(prfs_df.head())
     print("\nBest Parameters:", cv.best_params_)
 
     pass
 
 
 def save_model(model, model_filepath):
+    '''
+    INPUT: model and filepath
+    
+    OUTPUT: None
+    Saves model at given file path
+    '''
+    with open(model_filepath, 'wb') as f:
+        pickle.dump(model, f)
     pass
 
 
