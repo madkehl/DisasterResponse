@@ -14,6 +14,9 @@ from sklearn.pipeline import Pipeline
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.decomposition import LatentDirichletAllocation
 from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import GridSearchCV
+
 lemma = nltk.wordnet.WordNetLemmatizer()
 
 
@@ -22,7 +25,8 @@ def load_data(database_filepath):
     df = pd.read_sql_table('data/DisasterResponse.db', engine)
     clean_messages = []
     for i in df['message']:
-        clean_messages.append(tokenize(i))
+     #   clean_messages.append(tokenize(i))
+         clean_messages.append((i))
 
     df['clean_messages'] = clean_messages
     not_y = ['index', 'message', 'original', 'genre']
@@ -31,8 +35,10 @@ def load_data(database_filepath):
     Y = pd.melt(Y, id_vars = 'id')
     Y = Y[Y['value'] == 1]
     final_X = df.merge(Y, right_on = 'id', left_on = 'id', how = 'inner')
-    X = final_X['clean_messages']     
-    return(X, Y, category_names)
+    X = final_X['clean_messages']  
+    final_X["variable"] = final_X["variable"].astype('category')
+    Y_coded = final_X["variable"].cat.codes
+    return(X, Y_coded, category_names)
     pass
 
 def tokenize (txt):  
