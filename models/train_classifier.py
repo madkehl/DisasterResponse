@@ -39,8 +39,7 @@ def load_data(database_filepath):
     df = pd.read_sql_table('data/DisasterResponse.db', engine)
     clean_messages = []
     for i in df['message']:
-     #   clean_messages.append(tokenize(i))
-         clean_messages.append((i))
+        clean_messages.append(tokenize(i))
 
     df['clean_messages'] = clean_messages
     
@@ -82,7 +81,6 @@ def tokenize (txt):
         elif ('VB' in z[1]) and len(z[0]) > 3:
             lem = lemma.lemmatize(z[0], 'v')
             new_txt= new_txt + " " + str(lem.lower())
- #   print(new_txt)
     return(new_txt)
     pass
 
@@ -106,7 +104,7 @@ def build_model():
     pipeline = Pipeline([
         ('tfidf_vec', TfidfVectorizer()),
         ('scaler', StandardScaler(with_mean = False)),
-        ('clf', MultiOutputClassifier(estimator = RandomForestClassifier(),n_jobs=-1))
+        ('clf', MultiOutputClassifier(estimator = RandomForestClassifier(),n_jobs= -1))
         ])
     cv = GridSearchCV(pipeline, param_grid = parameters, verbose = 3)
     
@@ -122,12 +120,17 @@ def evaluate_model(model, X_test, Y_test, category_names):
     OUTPUT:
     precision, f1 score, recall for each category
     '''
-    y_pred = model.predict(Y_test)
-    prfs = precision_recall_fscore_support(y_true, y_pred, average=None, labels=category_names)
-    prfs_df = pd.DataFrame(prfs_df)
-    print(prfs_df.head())
-    print("\nBest Parameters:", cv.best_params_)
+    
+    print('step1')
+    
+    y_pred = model.predict(X_test)
 
+    print('step3')
+    print('step4')
+    ps,rs,fs,ss  = precision_recall_fscore_support(np.array(Y_test).reshape(-1), np.array(y_pred).reshape(-1), labels = range(0,36), average= None)
+
+    print("\nBest Parameters:", model.best_params_)
+    return(ps, fs,rs )
     pass
 
 
@@ -143,12 +146,12 @@ def save_model(model, model_filepath):
     pass
 
 
-'''def main():
+def main():
     if len(sys.argv) == 3:
         database_filepath, model_filepath = sys.argv[1:]
         print('Loading data...\n    DATABASE: {}'.format(database_filepath))
         X, Y, category_names = load_data(database_filepath)
-        X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2)
+        X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.4)
         
         print('Building model...')
         model = build_model()
@@ -172,4 +175,4 @@ def save_model(model, model_filepath):
 
 
 if __name__ == '__main__':
-    main()'''
+    main()
