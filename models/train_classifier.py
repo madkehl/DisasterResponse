@@ -34,9 +34,6 @@ def load_data(database_filepath):
     1. reads in DisasterResponse db
     2. cleans text in messages and inserts in new column
     3. drops non-category columns from Y dataframe
-    4. Y dataframe is transformed from wide to long format to better fit classifers
-    5. It seems that there are many X vars with multiple Y vars, so X was re-merged with Y to reflect that
-    6. Y var of interest is cast as a category and encoded with numerical values
     '''
     engine = create_engine('sqlite:///data/DisasterResponse.db')
     df = pd.read_sql_table('data/DisasterResponse.db', engine)
@@ -46,22 +43,15 @@ def load_data(database_filepath):
          clean_messages.append((i))
 
     df['clean_messages'] = clean_messages
-    return(df)
-    pass
-''' not_y = ['index', 'message', 'original', 'genre', 'clean_messages']
+    
+    not_y = ['index','id', 'message', 'original', 'genre', 'clean_messages']
     Y = df.drop(not_y, axis = 1)
     category_names = list(Y.columns)
-
     
-    Y = pd.melt(Y, id_vars = 'id')
-    Y = Y[Y['value'] == 1]
-    final_X = df.merge(Y, right_on = 'id', left_on = 'id', how = 'inner')
-    X = final_X['clean_messages']
+    X = df['clean_messages']
     
-    final_X["variable"] = final_X["variable"].astype('category')
-    Y_coded = final_X["variable"].cat.codes
-    return(X, Y_coded, category_names)
-    pass'''
+    return(X, Y, category_names)
+    pass
 
 def tokenize (txt):  
     '''
@@ -109,17 +99,16 @@ def build_model():
         #originally included 'True', but this is not possible because raw tfidf
         #is sparse.  Might be worth trying adding some kind of decomposition like
         #lda or nmf to address this
-        'scaler__with_mean': [False],
-        'clf__estimator__min_samples_split': np.arange(2, 102, 20),
-        'clf__estimator__max_features': np.arange(2, 20, 5)
+        'clf__estimator__min_samples_split': [2,15, 50],
+        'clf__estimator__max_features': [5,10,50]
         }
     
     pipeline = Pipeline([
         ('tfidf_vec', TfidfVectorizer()),
-        ('scaler', StandardScaler()),
-        ('clf', MultiOutputClassifier(estimator = RandomForestClassifier()))
+        ('scaler', StandardScaler(with_mean = False)),
+        ('clf', MultiOutputClassifier(estimator = RandomForestClassifier(),n_jobs=-1))
         ])
-    cv = GridSearchCV(pipeline, param_grid = parameters)
+    cv = GridSearchCV(pipeline, param_grid = parameters, verbose = 3)
     
     return(cv)
     pass
