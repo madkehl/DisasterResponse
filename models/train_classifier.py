@@ -11,6 +11,9 @@ from nltk.tokenize import word_tokenize
 import nltk
 
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.datasets import make_multilabel_classification
+from sklearn.multioutput import MultiOutputClassifier
+
 from sklearn.pipeline import Pipeline
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.decomposition import LatentDirichletAllocation
@@ -43,17 +46,22 @@ def load_data(database_filepath):
          clean_messages.append((i))
 
     df['clean_messages'] = clean_messages
-    not_y = ['index', 'message', 'original', 'genre']
+    return(df)
+    pass
+''' not_y = ['index', 'message', 'original', 'genre', 'clean_messages']
     Y = df.drop(not_y, axis = 1)
     category_names = list(Y.columns)
+
+    
     Y = pd.melt(Y, id_vars = 'id')
     Y = Y[Y['value'] == 1]
     final_X = df.merge(Y, right_on = 'id', left_on = 'id', how = 'inner')
-    X = final_X['clean_messages']  
+    X = final_X['clean_messages']
+    
     final_X["variable"] = final_X["variable"].astype('category')
     Y_coded = final_X["variable"].cat.codes
     return(X, Y_coded, category_names)
-    pass
+    pass'''
 
 def tokenize (txt):  
     '''
@@ -102,14 +110,14 @@ def build_model():
         #is sparse.  Might be worth trying adding some kind of decomposition like
         #lda or nmf to address this
         'scaler__with_mean': [False],
-        'clf__min_samples_split': np.arange(2, 100, 10),
-        'clf__max_features': np.arange(5, 100, 20)
+        'clf__estimator__min_samples_split': np.arange(2, 102, 20),
+        'clf__estimator__max_features': np.arange(2, 20, 5)
         }
     
     pipeline = Pipeline([
         ('tfidf_vec', TfidfVectorizer()),
         ('scaler', StandardScaler()),
-        ('clf', RandomForestClassifier()),
+        ('clf', MultiOutputClassifier(estimator = RandomForestClassifier()))
         ])
     cv = GridSearchCV(pipeline, param_grid = parameters)
     
@@ -146,7 +154,7 @@ def save_model(model, model_filepath):
     pass
 
 
-def main():
+'''def main():
     if len(sys.argv) == 3:
         database_filepath, model_filepath = sys.argv[1:]
         print('Loading data...\n    DATABASE: {}'.format(database_filepath))
@@ -175,4 +183,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    main()'''
