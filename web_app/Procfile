@@ -1,0 +1,1 @@
+web: cd ./web_app/app/ && python run.py
