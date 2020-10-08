@@ -1,0 +1,11 @@
+flask
+json
+pandas
+nltk
+plotly
+sklearn
+sqlalchemy
+sqlite3
+sys
+pickle
+gunicorn
