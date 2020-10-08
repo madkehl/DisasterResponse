@@ -1,5 +1,5 @@
 flask
-json5-0.8.5
+json5
 pandas-0.23.3
 numpy-1.12.1
 nltk-3.2.5
