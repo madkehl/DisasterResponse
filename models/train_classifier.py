@@ -20,7 +20,7 @@ from sklearn.decomposition import LatentDirichletAllocation
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import GridSearchCV
-from sklearn.metrics import precision_recall_fscore_support
+from sklearn.metrics import confusion_matrix
 
 lemma = nltk.wordnet.WordNetLemmatizer()
 
@@ -73,14 +73,14 @@ def tokenize (txt):
     tokens = word_tokenize(txt)
     pos_tagged = pos_tag(tokens)
     for z in pos_tagged:
-        if (('NN' in z[1])):
-            lem = lemma.lemmatize(z[0])
-            new_txt= new_txt + " " + str(lem.lower())
-        elif ('JJ' in z[1]) or ('RB' in z[1]):
-            new_txt= new_txt + " " + str(z[0])
-        elif ('VB' in z[1]) and len(z[0]) > 3:
-            lem = lemma.lemmatize(z[0], 'v')
-            new_txt= new_txt + " " + str(lem.lower())
+       # if (('NN' in z[1])):
+        lem = lemma.lemmatize(z[0])
+        new_txt= new_txt + " " + str(lem.lower())
+      #  elif ('JJ' in z[1]) or ('RB' in z[1]):
+       #     new_txt= new_txt + " " + str(z[0])
+        #elif ('VB' in z[1]) and len(z[0]) > 3:
+         #   lem = lemma.lemmatize(z[0], 'v')
+          #  new_txt= new_txt + " " + str(lem.lower())
     return(new_txt)
     pass
 
@@ -102,11 +102,12 @@ def build_model():
         }
     
     pipeline = Pipeline([
+        #used tfidf vectorizer instead of countvectorizor, tdif transformer
         ('tfidf_vec', TfidfVectorizer()),
         ('scaler', StandardScaler(with_mean = False)),
         ('clf', MultiOutputClassifier(estimator = RandomForestClassifier(),n_jobs= -1))
         ])
-    cv = GridSearchCV(pipeline, param_grid = parameters, verbose = 3)
+    cv = GridSearchCV(pipeline, param_grid = parameters, verbose = 3, cv = 3)
     
     return(cv)
     pass
@@ -121,16 +122,35 @@ def evaluate_model(model, X_test, Y_test, category_names):
     precision, f1 score, recall for each category
     '''
     
-    print('step1')
-    
     y_pred = model.predict(X_test)
+    y_true = np.array(Y_test)
+    y_pred = np.array(y_pred)
 
-    print('step3')
-    print('step4')
-    ps,rs,fs,ss  = precision_recall_fscore_support(np.array(Y_test).reshape(-1), np.array(y_pred).reshape(-1), labels = range(0,36), average= None)
+    labels = category_names
+
+    conf_mat_dict={}
+    recall_dict={}
+    presc_dict={}
+    fscore_dict= {}
+    for label_col in range(len(labels)):
+        y_true_label = y_true[:, label_col]
+        y_pred_label = y_pred[:, label_col]
+        cm = confusion_matrix(y_pred=y_pred_label, y_true=y_true_label)
+        conf_mat_dict[labels[label_col]] = confusion_matrix(y_pred=y_pred_label, y_true=y_true_label)
+        recall_dict[labels[label_col]] = np.diag(cm) / np.sum(cm, axis = 1)
+        presc_dict[labels[label_col]] = np.diag(cm) / np.sum(cm, axis = 0)
+        fscore_dict[labels[label_col]] = (2 * (presc_dict[labels[label_col]] * recall_dict[labels[label_col]]) / (presc_dict[labels[label_col]] + recall_dict[labels[label_col]]))
+
+
+
+    for label, matrix in conf_mat_dict.items():
+        print("Confusion matrix for label {}:".format(label))
+        print(matrix)
 
     print("\nBest Parameters:", model.best_params_)
-    return(ps, fs,rs )
+
+    
+    return(recall_dict, presc_dict,fscore_dict)
     pass
 
 
