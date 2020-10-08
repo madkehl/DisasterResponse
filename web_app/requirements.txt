@@ -6,5 +6,5 @@ nltk
 plotly
 scikit-learn
 SQLalchemy
-pickle
+joblib
 gunicorn
