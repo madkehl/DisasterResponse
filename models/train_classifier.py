@@ -41,13 +41,13 @@ def load_data(database_filepath):
         clean_messages.append(tokenize(i))
 
     df['clean_messages'] = clean_messages
-    
     not_y = ['index','id', 'message', 'original', 'genre', 'clean_messages']
     Y = df.drop(not_y, axis = 1)
     category_names = list(Y.columns)
+    print(Y[Y.isnull().any(axis=1)])
     
     X = df['clean_messages']
-    
+    print(X[X.isnull()])
     return(X, Y, category_names)
     pass
 
@@ -90,22 +90,21 @@ def build_model():
     
     OUTPUT: GridSearchCV obj
     
-    In the interest of time, only min samples split and max features are varied, for Random Forests
     '''
     parameters = {
         #for the convenience of the grader, the grid search is currently revealing a limited list of tested parameters.  
         #A complete list is included commented out
-    #    'clf__estimator__min_samples_split': [2,5, 10, 50],
+        'clf__estimator__min_samples_split': [2,5],
      #  'clf__estimator__max_features': [10, 50, 100, 150, 500, 1000, 5000],
      #  'clf__estimator__max_depth': [300, 500, 1000]
-        'clf__estimator__max_features': [1000, 5000],
-        'clf__estimator__max_depth':[500,1000]
+     #   'clf__estimator__max_features': [50, 1000],
+        'clf__estimator__max_depth':[100, 500]
         }
     
     pipeline = Pipeline([
         ('tfidf_vec', TfidfVectorizer()),
         ('scaler', StandardScaler(with_mean = False)),
-        ('clf', MultiOutputClassifier(estimator = RandomForestClassifier(min_samples_split = 2),n_jobs= -1))
+        ('clf', MultiOutputClassifier(estimator = RandomForestClassifier(max_features = 1000), n_jobs= -1))
         ])
     cv = GridSearchCV(pipeline, param_grid = parameters, verbose = 3)
     

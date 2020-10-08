@@ -43,17 +43,26 @@ def clean_data(df):
         2. transform the categories column into a usable dataframe full of dummy vars
         3. replace original categories with series of columns representing values
         4. clean the messages in question
+        5. for col related, as it has some mistyped 2s, replace with column mode; if any columns are completely
+            uniform, it also drops
     '''
+    fillmode = lambda col : col.fillna(col.mode()[0])
     
     df = df.dropna(subset = ['message'], axis = 0, how = 'any')
     df = df.drop_duplicates(subset = ['message'], keep = 'first')
-   
+
+
     categories = df.categories.str.split(';', expand=True)
     for i in categories.columns:
         categories = clean_cat_col(i, categories)
     categories['id'] = df['id']
     df = df.drop('categories', axis = 1)
     df = df.merge(categories, left_on = 'id', right_on = 'id', how = 'inner')
+    
+    
+    df = df[[i for i in list(df) if len(df[i].unique()) > 1]]   
+    df.loc[(df.related == 2),'related'] = df['related'].mode()[0]
+    df = df.apply(fillmode)
     return(df)
     pass
 

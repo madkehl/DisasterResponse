@@ -11,6 +11,8 @@ from plotly.graph_objs import Bar
 from sklearn.externals import joblib
 from sqlalchemy import create_engine
 
+from plotly.subplots import make_subplots
+import plotly.graph_objects as goplot
 
 app = Flask(__name__)
 
@@ -42,28 +44,46 @@ def index():
     # TODO: Below is an example - modify to extract data for your own visuals
     genre_counts = df.groupby('genre').count()['message']
     genre_names = list(genre_counts.index)
+    not_y = ['index','id', 'message', 'original', 'genre']
+    Y = df.drop(not_y, axis = 1)
+    category_names = list(Y.columns)
+    category_counts = list(Y.sum(axis = 0).values)
+    
+    g1 = {      "type": "pie",
+                "domain": {
+                    "x": [0,1],
+                    "y": [0,1]
+                    },
+                "marker": {
+                    "colors": genre_counts
+                    },
+                "hoverinfo": "label+value",
+                "labels": genre_names,
+                "values": genre_counts,
+           }
+
+        
+    
+    g2 =  {     'type': 'bar',
+                 'x': category_names,
+                 'y': category_counts,
+                 "marker": {
+                    "color": category_counts,
+                    "colorscale":"Viridis"
+                    }
+              
+        }
+    
     
     # create visuals
-    # TODO: Below is an example - modify to create your own visuals
+    fig = make_subplots(rows=1, cols=2,
+          specs=[[{"type": "pie"}, {"type": "bar"}]])
+    fig.add_trace(goplot.Pie(g1), row=1, col=1)
+    fig.add_trace(goplot.Bar(g2), row=1, col=2)
+    
+    
     graphs = [
-        {
-            'data': [
-                Bar(
-                    x=genre_names,
-                    y=genre_counts
-                )
-            ],
-
-            'layout': {
-                'title': 'Distribution of Message Genres',
-                'yaxis': {
-                    'title': "Count"
-                },
-                'xaxis': {
-                    'title': "Genre"
-                }
-            }
-        }
+        fig
     ]
     
     # encode plotly graphs in JSON
@@ -82,7 +102,7 @@ def go():
 
     # use model to predict classification for query
     classification_labels = model.predict([query])[0]
-    classification_results = dict(zip(df.columns[4:], classification_labels))
+    classification_results = dict(zip(df.columns[5:], classification_labels))
 
     # This will render the go.html Please see that file. 
     return render_template(
