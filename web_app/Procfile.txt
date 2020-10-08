@@ -1,1 +1,1 @@
-web: python -py /web_app/app/run.py
+web: cd ./web_app/app/ && python run.py
