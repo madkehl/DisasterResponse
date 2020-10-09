@@ -1,10 +1,12 @@
 import json
 import plotly
 import pandas as pd
-import os
 
+import nltk
 from nltk.stem import WordNetLemmatizer
 from nltk.tokenize import word_tokenize
+from nltk import pos_tag
+sno = nltk.stem.SnowballStemmer('english')
 
 from flask import Flask
 from flask import render_template, request, jsonify
@@ -17,17 +19,39 @@ import plotly.graph_objects as goplot
 
 app = Flask(__name__)
 
-def tokenize(text):
-    tokens = word_tokenize(text)
-    lemmatizer = WordNetLemmatizer()
-
-    clean_tokens = []
-    for tok in tokens:
-        clean_tok = lemmatizer.lemmatize(tok).lower().strip()
-        clean_tokens.append(clean_tok)
-
-    return clean_tokens
-
+def tokenize (txt):  
+    '''
+    INPUT: 
+    a line of text
+    
+    OUTPUT: 
+    that same text cleaned:  
+    
+    STEPS:
+        1. creates empty string to fill
+        2. tokenizes and pos_tags
+        3. lemmatizes all nouns
+        4. doesn't lemmatize adj/adv bc they don't change
+        5. only appends and lemmatizes longer verbs (theory that shorter verb forms are less regular and therefore more              likely to be common words/stop words)
+    
+    '''
+    new_txt = ""
+    tokens = word_tokenize(txt)
+    pos_tagged = pos_tag(tokens)
+    for z in pos_tagged:
+        if (('NN' in z[1])):
+            lem = lemma.lemmatize(z[0])
+            lem = sno.stem(lem)
+            new_txt= new_txt + " " + str(lem.lower())
+        elif ('JJ' in z[1]):
+            lem = sno.stem(z[0])
+            new_txt= new_txt + " " + str(lem.lower())
+        elif ('VB' in z[1]) and (len(z[0]) > 3):
+            lem = lemma.lemmatize(z[0], 'v')
+            lem = sno.stem(lem)
+            new_txt= new_txt + " " + str(lem.lower())
+    return(new_txt)
+    pass
 # load data
 engine = create_engine('sqlite:///../data/DisasterResponse.db')
 df = pd.read_sql_table('data/DisasterResponse.db', engine)
@@ -49,6 +73,9 @@ def index():
     Y = df.drop(not_y, axis = 1)
     category_names = list(Y.columns)
     category_counts = list(Y.sum(axis = 0).values)
+    Y_long = pd.melt(Y.reset_index(), id_vars='index')
+    Y_long = Y_long[Y_long['value'] == 1]
+    Y_long = Y_long.groupby('index').agg('sum').reset_index()
     
     g1 = {      "type": "pie",
                 "domain": {
@@ -60,27 +87,34 @@ def index():
                     },
                 "hoverinfo": "label+value",
                 "labels": genre_names,
-                "values": genre_counts,
+                "values": genre_counts
            }
 
         
     
     g2 =  {     'type': 'bar',
-                 'x': category_names,
+                 'x':category_names,
                  'y': category_counts,
+                "hoverinfo": "x+y",
                  "marker": {
                     "color": category_counts,
                     "colorscale":"Viridis"
                     }
+           
               
         }
-    
+  
     
     # create visuals
-    fig = make_subplots(rows=1, cols=2,
-          specs=[[{"type": "pie"}, {"type": "bar"}]])
+    fig = make_subplots(rows=2, cols=2,
+          specs=[[{"type": "pie"}, {"type": "histogram"}] ,[{"type": "bar", "colspan": 2},None]],
+          subplot_titles=("Genre Breakdown","Number of Categories per ID", "Category Counts"))
+    
     fig.add_trace(goplot.Pie(g1), row=1, col=1)
-    fig.add_trace(goplot.Bar(g2), row=1, col=2)
+    fig.add_trace(goplot.Histogram(x = Y_long['value']), row=1, col=2)
+    fig.add_trace(goplot.Bar(g2), row=2, col=1)
+    
+    fig.update_layout(width = 1000, height = 1000, margin=dict(l=20, r=20, b=20, t=100),  showlegend = False)
     
     
     graphs = [
@@ -114,9 +148,9 @@ def go():
 
 
 def main():
-    port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port)
-  #  app.run(host='0.0.0.0', port=3001, debug=True)
+    port = int(os.environ.get('PORT', 5000))#comment this out
+    app.run(host='0.0.0.0', port=port)#comment this out
+  #  app.run(host='0.0.0.0', port=3001, debug=True) #uncomment this
 
 
 if __name__ == '__main__':

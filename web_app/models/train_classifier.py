@@ -10,6 +10,8 @@ from nltk import pos_tag
 from nltk.tokenize import word_tokenize
 import nltk
 
+sno = nltk.stem.SnowballStemmer('english')
+
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.datasets import make_multilabel_classification
 from sklearn.multioutput import MultiOutputClassifier
@@ -44,10 +46,8 @@ def load_data(database_filepath):
     not_y = ['index','id', 'message', 'original', 'genre', 'clean_messages']
     Y = df.drop(not_y, axis = 1)
     category_names = list(Y.columns)
-    print(Y[Y.isnull().any(axis=1)])
     
     X = df['clean_messages']
-    print(X[X.isnull()])
     return(X, Y, category_names)
     pass
 
@@ -65,8 +65,7 @@ def tokenize (txt):
         3. lemmatizes all nouns
         4. doesn't lemmatize adj/adv bc they don't change
         5. only appends and lemmatizes longer verbs (theory that shorter verb forms are less regular and therefore more              likely to be common words/stop words)
-    Chose to not use stopword list because it can be implemented from tfidf.
-    POS_tagging can make this slow, but believe it is worth it for eventual output
+    
     '''
     new_txt = ""
     tokens = word_tokenize(txt)
@@ -74,11 +73,14 @@ def tokenize (txt):
     for z in pos_tagged:
         if (('NN' in z[1])):
             lem = lemma.lemmatize(z[0])
+            lem = sno.stem(lem)
             new_txt= new_txt + " " + str(lem.lower())
-        elif ('JJ' in z[1]) or ('RB' in z[1]):
-            new_txt= new_txt + " " + str(z[0])
-        elif ('VB' in z[1]) and len(z[0]) > 3:
+        elif ('JJ' in z[1]):
+            lem = sno.stem(z[0])
+            new_txt= new_txt + " " + str(lem.lower())
+        elif ('VB' in z[1]) and (len(z[0]) > 3):
             lem = lemma.lemmatize(z[0], 'v')
+            lem = sno.stem(lem)
             new_txt= new_txt + " " + str(lem.lower())
     return(new_txt)
     pass
@@ -94,17 +96,16 @@ def build_model():
     parameters = {
         #for the convenience of the grader, the grid search is currently revealing a limited list of tested parameters.  
         #A complete list is included commented out
-        'clf__estimator__min_samples_split': [2,5],
-     #  'clf__estimator__max_features': [10, 50, 100, 150, 500, 1000, 5000],
-     #  'clf__estimator__max_depth': [300, 500, 1000]
-     #   'clf__estimator__max_features': [50, 1000],
-        'clf__estimator__max_depth':[100, 500]
+     #   'clf__estimator__min_samples_split': [2,5, 10],
+     #  'clf__estimator__max_features': [10, 50, 100, 150, 500, 1000, 1500],
+     #  'clf__estimator__max_depth': [300, 500, 700, 800, 1000]
+        'clf__estimator__max_features': [1500, 2500],
+        'clf__estimator__max_depth':[700, 800]
         }
     
     pipeline = Pipeline([
         ('tfidf_vec', TfidfVectorizer()),
-        ('scaler', StandardScaler(with_mean = False)),
-        ('clf', MultiOutputClassifier(estimator = RandomForestClassifier(max_features = 1000), n_jobs= -1))
+        ('clf', MultiOutputClassifier(estimator = RandomForestClassifier(min_samples_split = 2, random_state = 5), n_jobs= -1))
         ])
     cv = GridSearchCV(pipeline, param_grid = parameters, verbose = 3)
     
