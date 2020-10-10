@@ -5,8 +5,9 @@ Go to: https://protected-waters-31003.herokuapp.com/
 
 or
 
-0. **The run.py script in the Github currently has its ports set up to interface with Heroku.  If you want to run this on your own machine**
-   you will have to go into the run.py file, df __main__() and comment out/disable the first two lines, and un-comment out the third (notes are in file)
+0. **The run.py script in the Github currently has its ports set up to interface with Heroku.  If you want to run this on your own machine through the udacity portal setup you will have to go into the run.py file, df __main__() and comment out/disable the first two lines, and un-comment out the third (notes are in file)**
+
+**The child_alone category, as it was found to be empty was dropped from the 36 possible labels**
 
 1. Run the following commands in the project's root directory to set up your database and model.
 

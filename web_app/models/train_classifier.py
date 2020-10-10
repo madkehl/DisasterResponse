@@ -25,6 +25,8 @@ from sklearn.metrics import confusion_matrix
 
 lemma = nltk.wordnet.WordNetLemmatizer()
 
+def get_col_sample(df, samplen):
+    return(df.sample(n=samplen, replace=True, random_state=1).reset_index(drop = True))
 
 def load_data(database_filepath):
     '''
@@ -38,17 +40,28 @@ def load_data(database_filepath):
     '''
     engine = create_engine('sqlite:///data/DisasterResponse.db')
     df = pd.read_sql_table('data/DisasterResponse.db', engine)
-    clean_messages = []
-    for i in df['message']:
-        clean_messages.append(tokenize(i))
-
-    df['clean_messages'] = clean_messages
-    not_y = ['index','id', 'message', 'original', 'genre', 'clean_messages']
+    
+    not_y = ['index','id', 'message', 'original', 'genre']
     Y = df.drop(not_y, axis = 1)
     category_names = list(Y.columns)
-    
-    X = df['clean_messages']
-    return(X, Y, category_names)
+    category_counts = list(Y.sum(axis = 0).values)
+    number_samples = int(np.median(category_counts))
+    #print(number_samples)
+    balanced_list = []
+    for i in category_names[1:len(category_names)-1]:
+        for_balance = df[df[i] == 1].reset_index(drop = True)
+        balanced_list.append(get_col_sample(for_balance, number_samples))
+        print(i) 
+        
+    balanced_df = pd.concat(balanced_list, axis = 0)
+    print(len(balanced_df['message']))
+    clean_messages = []
+    for i in balanced_df['message']:
+         clean_messages.append(tokenize(i))
+    print('step1')     
+    Y_bal = balanced_df.drop(not_y, axis = 1)
+    X_bal = clean_messages
+    return(X_bal, Y_bal, category_names)
     pass
 
 def tokenize (txt):  
@@ -82,6 +95,7 @@ def tokenize (txt):
             lem = lemma.lemmatize(z[0], 'v')
             lem = sno.stem(lem)
             new_txt= new_txt + " " + str(lem.lower())
+   
     return(new_txt)
     pass
 
@@ -96,16 +110,16 @@ def build_model():
     parameters = {
         #for the convenience of the grader, the grid search is currently revealing a limited list of tested parameters.  
         #A complete list is included commented out
-     #   'clf__estimator__min_samples_split': [2,5, 10],
+        'clf__estimator__min_samples_split': [2,5],
      #  'clf__estimator__max_features': [10, 50, 100, 150, 500, 1000, 1500],
      #  'clf__estimator__max_depth': [300, 500, 700, 800, 1000]
-        'clf__estimator__max_features': [1500, 2500],
-        'clf__estimator__max_depth':[700, 800]
+        'clf__estimator__max_features': [500, 1500],
+        'clf__estimator__max_depth':[700]
         }
     
     pipeline = Pipeline([
         ('tfidf_vec', TfidfVectorizer()),
-        ('clf', MultiOutputClassifier(estimator = RandomForestClassifier(min_samples_split = 2, random_state = 5), n_jobs= -1))
+        ('clf', MultiOutputClassifier(estimator = RandomForestClassifier(random_state = 5), n_jobs= -1))
         ])
     cv = GridSearchCV(pipeline, param_grid = parameters, verbose = 3)
     

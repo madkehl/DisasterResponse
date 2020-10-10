@@ -1,6 +1,7 @@
 import json
 import plotly
 import pandas as pd
+import numpy as np
 import os
 
 import nltk
@@ -19,6 +20,10 @@ from plotly.subplots import make_subplots
 import plotly.graph_objects as goplot
 
 app = Flask(__name__)
+
+
+def get_col_sample(df, samplen):
+    return(df.sample(n=samplen, replace=True, random_state=1).reset_index(drop = True))
 
 def tokenize (txt):  
     '''
@@ -77,6 +82,7 @@ def index():
     Y_long = pd.melt(Y.reset_index(), id_vars='index')
     Y_long = Y_long[Y_long['value'] == 1]
     Y_long = Y_long.groupby('index').agg('sum').reset_index()
+    number_samples = int(np.median(category_counts))
     
     g1 = {      "type": "pie",
                 "domain": {
@@ -109,7 +115,7 @@ def index():
     # create visuals
     fig = make_subplots(rows=2, cols=2,
           specs=[[{"type": "pie"}, {"type": "histogram"}] ,[{"type": "bar", "colspan": 2},None]],
-          subplot_titles=("Genre Breakdown","Number of Categories per ID", "Category Counts"))
+          subplot_titles=("Genre Breakdown (Raw)","Number of Categories per ID (Raw)", "Category Counts (Raw)"))
     
     fig.add_trace(goplot.Pie(g1), row=1, col=1)
     fig.add_trace(goplot.Histogram(x = Y_long['value']), row=1, col=2)
@@ -117,9 +123,48 @@ def index():
     
     fig.update_layout(width = 1000, height = 1000, margin=dict(l=20, r=20, b=20, t=100),  showlegend = False)
     
+    balanced_list = []
+    for i in category_names[1:len(category_names)-1]:
+        for_balance = df[df[i] == 1].reset_index(drop = True)
+        balanced_list.append(get_col_sample(for_balance, number_samples))
+       # print(i) 
+        
+    balanced_df = pd.concat(balanced_list, axis = 0)
+    
+    Y_bal = balanced_df.drop(not_y, axis = 1)
+    X_bal = balanced_df['message']
+    category_names_bal = list(Y_bal.columns)
+    category_counts_bal = list(Y_bal.sum(axis = 0).values) 
+    
+    Y_long_bal = pd.melt(Y_bal.reset_index(), id_vars='index')
+    Y_long_bal = Y_long_bal[Y_long_bal['value'] == 1]
+    Y_long_bal = Y_long_bal.groupby('index').agg('sum').reset_index()
+    
+    g3 =  {     'type': 'bar',
+                 'x':category_names_bal,
+                 'y': category_counts_bal,
+                "hoverinfo": "x+y",
+                 "marker": {
+                    "color": category_counts_bal,
+                    "colorscale":"Viridis"
+                    }
+           
+              
+        }
+    
+    
+    fig1 = make_subplots(rows=1, cols=2,
+          specs=[[{"type": "histogram"},{"type": "bar"}]],
+          subplot_titles=( "Category Counts (Balanced)","Number of Categories per ID (Balanced)"))
+    
+    fig1.add_trace(goplot.Histogram(x = Y_long_bal['value']), row=1, col=2)
+    fig1.add_trace(goplot.Bar(g3), row=1, col=1)
+    
+    fig1.update_layout(width = 1000, height = 500, margin=dict(l=20, r=20, b=20, t=100),  showlegend = False)
     
     graphs = [
-        fig
+        fig,
+        fig1
     ]
     
     # encode plotly graphs in JSON
@@ -149,9 +194,7 @@ def go():
 
 
 def main():
-    port = int(os.environ.get('PORT', 5000))#comment this out
-    app.run(host='0.0.0.0', port=port)#comment this out
-  #  app.run(host='0.0.0.0', port=3001, debug=True) #uncomment this
+    app.run(host='0.0.0.0', port=3001, debug=True)
 
 
 if __name__ == '__main__':
