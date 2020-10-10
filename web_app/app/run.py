@@ -194,7 +194,9 @@ def go():
 
 
 def main():
-    app.run(host='0.0.0.0', port=3001, debug=True)
+    port = int(os.environ.get('PORT', 5000))#comment this out
+    app.run(host='0.0.0.0', port=port)#comment this out
+  #  app.run(host='0.0.0.0', port=3001, debug=True) #uncomment this
 
 
 if __name__ == '__main__':
