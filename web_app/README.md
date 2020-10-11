@@ -55,7 +55,7 @@ scipy==1.2.1
   
 see accuracy_metrics.txt
 
-#Discussion/Notes:
+# Discussion/Notes:
 
 **The child_alone category, as it was found to be empty (no training data available for it) was dropped from the 36 possible labels**
 
