@@ -23,6 +23,13 @@ app = Flask(__name__)
 
 
 def get_col_sample(df, samplen):
+    '''
+    INPUT: 
+    dataframe, number of samples
+    
+    OUTPUT: 
+    a bootstrapped sample of the df of row size samplen
+    '''
     return(df.sample(n=samplen, replace=True, random_state=1).reset_index(drop = True))
 
 def tokenize (txt):  
@@ -55,6 +62,7 @@ def tokenize (txt):
             new_txt= new_txt + " " + str(lem.lower())
     return(new_txt)
     pass
+
 # load data
 engine = create_engine('sqlite:///../data/DisasterResponse.db')
 df = pd.read_sql_table('data/DisasterResponse.db', engine)
@@ -68,7 +76,8 @@ model = joblib.load("../models/classifier.pkl")
 @app.route('/index')
 def index():
     
-    genre_counts = df.groupby('genre').count()
+    # create visuals
+    genre_counts = df.groupby('genre').count()['message']
     genre_names = list(genre_counts.index)
     
     not_y = ['index','id', 'message', 'original', 'genre']
@@ -109,7 +118,6 @@ def index():
         }
   
     
-    # create visuals
     fig = make_subplots(rows=2, cols=2,
           specs=[[{"type": "pie"}, {"type": "histogram"}] ,[{"type": "bar", "colspan": 2},None]],
           subplot_titles=("Genre Breakdown (Raw)","Number of Categories per ID (Raw)", "Category Counts (Raw)"))
