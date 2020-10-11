@@ -75,7 +75,7 @@ model = joblib.load("../models/classifier.pkl")
 @app.route('/')
 @app.route('/index')
 def index():
-    
+   
     # create visuals for the raw data
     genre_counts = df.groupby('genre').count()['message']
     genre_names = list(genre_counts.index)
@@ -144,11 +144,7 @@ def index():
     
     category_names_bal = list(Y_bal.columns)
     category_counts_bal = list(Y_bal.sum(axis = 0).values) 
-    
-    Y_long_bal = pd.melt(Y_bal.reset_index(), id_vars='index')
-    Y_long_bal = Y_long_bal[Y_long_bal['value'] == 1]
-    Y_long_bal = Y_long_bal.groupby('index').agg('sum').reset_index()
-    
+        
     g3 =  {     'type': 'bar',
                  'x':category_names_bal,
                  'y': category_counts_bal,

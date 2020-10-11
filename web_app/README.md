@@ -5,9 +5,9 @@ Go to: https://protected-waters-31003.herokuapp.com/
 
 or
 
-0. **The run.py script in the Github currently has its ports set up to interface with Heroku.  If you want to run this on your own machine through the udacity portal setup you will have to go into the run.py file, df __main__() and comment out/disable the first two lines, and un-comment out the third (notes are in file)**
+0. **The run.py script in the Github currently has its ports set up to interface with Heroku.  If you want to run this on your own machine through the udacity portal setup you will have to go into the run.py file, df main() and comment out/disable the first two lines, and un-comment out the third (notes are in file)**
 
-**The child_alone category, as it was found to be empty was dropped from the 36 possible labels**
+**The child_alone category, as it was found to be empty (no training data available for it) was dropped from the 36 possible labels**
 
 1. Run the following commands in the project's root directory to set up your database and model.
 
@@ -15,7 +15,7 @@ or
         `python data/process_data.py data/disaster_messages.csv data/disaster_categories.csv data/DisasterResponse.db`
     - To run ML pipeline that trains classifier and saves
     	`python -m nltk.downloader averaged_perceptron_tagger`**
-        `python models/train_classifier.py data/Dispython -m nltk.downloader averaged_perceptron_taggerasterResponse.db models/classifier.pkl`
+        `python models/train_classifier.py data/DisasterResponse.db models/classifier.pkl`
 
 2. Run the following command in the app's directory to run your web app.
     `python install plotly --upgrade`**
@@ -23,7 +23,7 @@ or
 
 3. Go to http://0.0.0.0:3001/
 
-** apply if you are working in the Udacity workspace environment. 
+** these steps apply if you are working in the Udacity workspace environment. 
 
 
 # Folders and files included:
@@ -59,13 +59,18 @@ scipy==1.2.1
   
 see accuracy_metrics.txt
 
+#Discussion:
+
+The data was not evenly split between categories, leading to poor original performance by the classifier.  This was somewhat remedied by finding the median number of samples in a category and taking a bootstrapped sample of each category equal to this median (sampling with replacement). This was superior to simply subsampling to the size of the smallest category because it required us to throw out less data (the min # per category was 117, not including 0 for child_alone). Sampling with replacement allowed us to oversample the smaller categories. 
+
+Because of the multioutput nature of the data, there is still an overrepresentation of things marked as 'related'. This is because in our random subsamples, most items "drawn" for the other categories were also marked as related. Therefore this classifier is very likely to mark everything as at least 'related' and is not very useful for determining whether something is related or not. Additionally, the smaller the root category, the more likely it is to be overfit too the training data.  
+ 
 # Contact: 
 
 Madeline Kehl (mad.kehl@gmail.com)
 
 # Acknowledgements:
 
-* Kaggle 
 * Udacity Data Science Nanodegree
 
 
