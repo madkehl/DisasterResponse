@@ -68,7 +68,7 @@ model = joblib.load("../models/classifier.pkl")
 @app.route('/index')
 def index():
     
-    genre_counts = df.groupby('genre').count()['message']
+    genre_counts = df.groupby('genre').count()
     genre_names = list(genre_counts.index)
     
     not_y = ['index','id', 'message', 'original', 'genre']
@@ -76,8 +76,8 @@ def index():
     category_names = list(Y.columns)
     category_counts = list(Y.sum(axis = 0).values)
     
-    agg = df.drop(not_y, axis = 1)
-    agg_sum = agg.sum(axis = 1).values
+    agg = Y
+    agg_sum = list(agg.sum(axis = 1).values)
     
     number_samples = int(np.median(category_counts))
     
@@ -88,7 +88,6 @@ def index():
                     },
                 "marker": {
                     "colors": genre_counts
-                
                     },
                 "hoverinfo": "label+value",
                 "labels": genre_names,
@@ -129,7 +128,7 @@ def index():
     balanced_df = pd.concat(balanced_list, axis = 0)
     
     agg_bal = balanced_df.drop(not_y, axis = 1)
-    agg_bal_sum = agg_bal.sum(axis = 1).values
+    agg_bal_sum = list(agg_bal.sum(axis = 1).values)
     
     Y_bal = balanced_df.drop(not_y, axis = 1)
     X_bal = balanced_df['message']
