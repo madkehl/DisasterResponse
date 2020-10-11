@@ -49,19 +49,19 @@ def load_data(database_filepath):
     category_names = list(Y.columns)
     category_counts = list(Y.sum(axis = 0).values)
     number_samples = int(np.median(category_counts))
-    #print(number_samples)
+    
     balanced_list = []
     for i in category_names[1:len(category_names)-1]:
         for_balance = df[df[i] == 1].reset_index(drop = True)
         balanced_list.append(get_col_sample(for_balance, number_samples))
-        print(i) 
+        
         
     balanced_df = pd.concat(balanced_list, axis = 0)
     
     clean_messages = []
     for i in balanced_df['message']:
          clean_messages.append(tokenize(i))
-    print('step1')     
+        
     Y_bal = balanced_df.drop(not_y, axis = 1)
     X_bal = clean_messages
     return(X_bal, Y_bal, category_names)

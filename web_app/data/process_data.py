@@ -68,6 +68,13 @@ def clean_data(df):
 
 
 def save_data(df, database_filename):
+    '''
+    INPUT: dataframe, the desired name of the file
+
+    OUTPUT: none
+
+    saves file as sql
+    '''
     df.to_sql(database_filename, con = conn)
     pass  
 

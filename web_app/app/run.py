@@ -76,7 +76,7 @@ model = joblib.load("../models/classifier.pkl")
 @app.route('/index')
 def index():
     
-    # create visuals
+    # create visuals for the raw data
     genre_counts = df.groupby('genre').count()['message']
     genre_names = list(genre_counts.index)
     
@@ -127,7 +127,8 @@ def index():
     fig.add_trace(goplot.Bar(g2), row=2, col=1)
     
     fig.update_layout(width = 1000, height = 1000, margin=dict(l=20, r=20, b=20, t=100),  showlegend = False)
-    
+
+    # create parallel visuals for the bootstrapped/rebalanced data
     balanced_list = []
     for i in category_names[1:len(category_names)-1]:
         for_balance = df[df[i] == 1].reset_index(drop = True)
