@@ -1,13 +1,9 @@
 # Disaster Response Pipeline Project
 
 ### Instructions:
-Go to: https://protected-waters-31003.herokuapp.com/
+[app hosted in Heroku](https://protected-waters-31003.herokuapp.com/)
 
 or
-
-0. **The run.py script in the Github currently has its ports set up to interface with Heroku.  If you want to run this on your own machine through the udacity portal setup you will have to go into the run.py file, df main() and comment out/disable the first two lines, and un-comment out the third (notes are in file)**
-
-**The child_alone category, as it was found to be empty (no training data available for it) was dropped from the 36 possible labels**
 
 1. Run the following commands in the project's root directory to set up your database and model.
 
@@ -17,9 +13,9 @@ or
     	`python -m nltk.downloader averaged_perceptron_tagger`**
         `python models/train_classifier.py data/DisasterResponse.db models/classifier.pkl`
 
-2. Run the following command in the app's directory to run your web app.
+2. Run the following command in the app's directory to run your web app. **NOTE SECOND ARG**: this is because the default is set to run smoothly with heroku, port 5000
     `python install plotly --upgrade`**
-    `python run.py`
+    `python run.py 3001`
 
 3. Go to http://0.0.0.0:3001/
 
@@ -59,7 +55,9 @@ scipy==1.2.1
   
 see accuracy_metrics.txt
 
-#Discussion:
+#Discussion/Notes:
+
+**The child_alone category, as it was found to be empty (no training data available for it) was dropped from the 36 possible labels**
 
 The data was not evenly split between categories, leading to poor original performance by the classifier.  This was somewhat remedied by finding the median number of samples in a category and taking a bootstrapped sample of each category equal to this median (sampling with replacement). This was superior to simply subsampling to the size of the smallest category because it required us to throw out less data (the min # per category was 117, not including 0 for child_alone). Sampling with replacement allowed us to oversample the smaller categories. 
 

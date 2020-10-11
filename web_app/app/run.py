@@ -3,6 +3,7 @@ import plotly
 import pandas as pd
 import numpy as np
 import os
+import sys
 
 import nltk
 from nltk.stem import WordNetLemmatizer
@@ -75,7 +76,17 @@ model = joblib.load("../models/classifier.pkl")
 @app.route('/')
 @app.route('/index')
 def index():
-   
+    '''
+    STEPS:
+        1. create genre counts and get names (for pie plot)
+        2. create category names and category counts (for bar plot)
+        3. get row sums of Y (for histogram)
+        4. create pie chart (g1) and bar chart (g2)
+        5. create layout for this fig
+        6. create a balanced df to produce bar plot and histogram
+        7. set layout for this fig
+        8. render in json
+    '''
     # create visuals for the raw data
     genre_counts = df.groupby('genre').count()['message']
     genre_names = list(genre_counts.index)
@@ -183,6 +194,9 @@ def index():
 # web page that handles user query and displays model results
 @app.route('/go')
 def go():
+    '''
+    takes user input and returns predictions
+    '''
     # save user input in query
     query = request.args.get('query', '') 
 
@@ -199,9 +213,18 @@ def go():
 
 
 def main():
-    port = int(os.environ.get('PORT', 5000))#comment this out
-    app.run(host='0.0.0.0', port=port)#comment this out
-  #  app.run(host='0.0.0.0', port=3001, debug=True) #uncomment this
+    '''
+    as the main function this runs whenever the file is called
+    
+    it sets the port and then runs the app through the desired port
+    '''
+    
+    if len(sys.argv) == 2:
+        app.run(host='0.0.0.0', port=int(sys.argv[1]), debug=True)
+    else:
+        port = int(os.environ.get('PORT', 5000))
+        app.run(host='0.0.0.0', port=port)
+  
 
 
 if __name__ == '__main__':

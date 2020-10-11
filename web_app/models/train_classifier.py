@@ -40,9 +40,13 @@ def load_data(database_filepath):
     1. reads in DisasterResponse db
     2. cleans text in messages and inserts in new column
     3. drops non-category columns from Y dataframe
+    4. gets the name of categories, count (to find median)
+    5. creates a more balanced dataframe using sampling with replacement
+    6. cleans the text of the new dataframe
+    7. returns an X (messages) Y categories, and category names
     '''
     engine = create_engine('sqlite:///data/DisasterResponse.db')
-    df = pd.read_sql_table('data/DisasterResponse.db', engine)
+    df = pd.read_sql_table(database_filepath, engine)
     
     not_y = ['index','id', 'message', 'original', 'genre']
     Y = df.drop(not_y, axis = 1)
@@ -77,9 +81,9 @@ def tokenize (txt):
     
     STEPS:
         1. creates empty string to fill
-        2. tokenizes and pos_tags
+        2. tokenizes and pos_tags (easier to find critical words)
         3. lemmatizes all nouns
-        4. doesn't lemmatize adj/adv bc they don't change
+        4. doesn't lemmatize adj bc they don't change 
         5. only appends and lemmatizes longer verbs (theory that shorter verb forms are less regular and therefore more              likely to be common words/stop words)
     
     '''
@@ -110,11 +114,9 @@ def build_model():
     parameters = {
         #for the convenience of the grader, the grid search is currently revealing a limited list of tested parameters.  
         #A complete list is included commented out
-        'clf__estimator__min_samples_split': [2],
-     #  'clf__estimator__max_features': [10, 50, 100, 150, 500, 1000, 1500],
-     #  'clf__estimator__max_depth': [300, 500, 700, 800, 1000]
-        'clf__estimator__max_features': [300, 500],
-        'clf__estimator__max_depth':[700]
+        'clf__estimator__min_samples_split': [2],#[5, 10,50]
+        'clf__estimator__max_features': [300, 500],#[10, 50, 100, 150, 1000, 1500],
+        'clf__estimator__max_depth':[700] # [300, 500, 800, 1000]
         }
     
     pipeline = Pipeline([
@@ -181,7 +183,6 @@ def evaluate_model(model, X_test, Y_test, category_names):
 
     for label, matrix in conf_mat_dict.items():
         print("Accuracy metrics for label {}:".format(label))
-     #   print(matrix['conf_mat'])
         print('recall: ' + str(matrix['recall']))
         print('precision: ' + str(matrix['precision']))
         print('f1_score: ' + str(matrix['f1_score']))
@@ -205,6 +206,17 @@ def save_model(model, model_filepath):
 
 
 def main():
+    '''
+    As the main function, this runs when the file is run
+
+    STEPS:
+        1. check for required number of arguments (this file, database_filepath, pkl file to save model)
+        2. load_data, split into training and test categories
+        3. build a model using GridSearchCV
+        4. Train the model
+        5. Evaluate the model
+        5. save the model 
+    '''
     if len(sys.argv) == 3:
         database_filepath, model_filepath = sys.argv[1:]
         print('Loading data...\n    DATABASE: {}'.format(database_filepath))
