@@ -10,8 +10,6 @@ from nltk import pos_tag
 from nltk.tokenize import word_tokenize
 import nltk
 
-sno = nltk.stem.SnowballStemmer('english')
-
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.datasets import make_multilabel_classification
 from sklearn.multioutput import MultiOutputClassifier
@@ -26,6 +24,11 @@ from sklearn.metrics import confusion_matrix
 lemma = nltk.wordnet.WordNetLemmatizer()
 
 def get_col_sample(df, samplen):
+    '''
+    INPUT: data frame, number of samples desired
+    
+    OUTPUT: number of samples for the dataframe
+    '''
     return(df.sample(n=samplen, replace=True, random_state=1).reset_index(drop = True))
 
 def load_data(database_filepath):
@@ -54,7 +57,7 @@ def load_data(database_filepath):
         print(i) 
         
     balanced_df = pd.concat(balanced_list, axis = 0)
-    print(len(balanced_df['message']))
+    
     clean_messages = []
     for i in balanced_df['message']:
          clean_messages.append(tokenize(i))
@@ -86,14 +89,11 @@ def tokenize (txt):
     for z in pos_tagged:
         if (('NN' in z[1])):
             lem = lemma.lemmatize(z[0])
-            lem = sno.stem(lem)
             new_txt= new_txt + " " + str(lem.lower())
         elif ('JJ' in z[1]):
-            lem = sno.stem(z[0])
-            new_txt= new_txt + " " + str(lem.lower())
+            new_txt= new_txt + " " + str(z[0].lower())
         elif ('VB' in z[1]) and (len(z[0]) > 3):
             lem = lemma.lemmatize(z[0], 'v')
-            lem = sno.stem(lem)
             new_txt= new_txt + " " + str(lem.lower())
    
     return(new_txt)
@@ -110,10 +110,10 @@ def build_model():
     parameters = {
         #for the convenience of the grader, the grid search is currently revealing a limited list of tested parameters.  
         #A complete list is included commented out
-        'clf__estimator__min_samples_split': [2,5],
+        'clf__estimator__min_samples_split': [2],
      #  'clf__estimator__max_features': [10, 50, 100, 150, 500, 1000, 1500],
      #  'clf__estimator__max_depth': [300, 500, 700, 800, 1000]
-        'clf__estimator__max_features': [500, 1500],
+        'clf__estimator__max_features': [300, 500],
         'clf__estimator__max_depth':[700]
         }
     
@@ -129,15 +129,24 @@ def build_model():
 
 
 def precision_(cm):
-    
+    '''
+    INPUT: confusion matrix
+    OUTPUT: precision
+    '''
     return(np.diag(cm)[np.diag(cm).shape[0] -1] / np.sum(cm, axis = 0)[ np.sum(cm, axis = 0).shape[0]-1])
 
 def recall_(cm):
-    
+    '''
+    INPUT: confusion matrix
+    OUTPUT: recall
+    '''
     return(np.diag(cm)[np.diag(cm).shape[0] -1] / np.sum(cm, axis = 1)[ np.sum(cm, axis = 1).shape[0]-1])
 
 def f1score_(cm):
-    
+    '''
+    INPUT: confusion matrix
+    OUTPUT: f1 score
+    '''
     return(2 * (precision_(cm) * recall_(cm)) / (precision_(cm)  + recall_(cm)))
 
 #https://stats.stackexchange.com/questions/21551/how-to-compute-precision-recall-for-multiclass-multilabel-classification
@@ -172,10 +181,10 @@ def evaluate_model(model, X_test, Y_test, category_names):
 
     for label, matrix in conf_mat_dict.items():
         print("Accuracy metrics for label {}:".format(label))
-        print(matrix['conf_mat'])
-        print(matrix['recall'])
-        print(matrix['precision'])
-        print(matrix['f1_score'])
+     #   print(matrix['conf_mat'])
+        print('recall: ' + str(matrix['recall']))
+        print('precision: ' + str(matrix['precision']))
+        print('f1_score: ' + str(matrix['f1_score']))
 
     print("\nBest Parameters:", model.best_params_)
 
