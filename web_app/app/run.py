@@ -134,7 +134,7 @@ def index():
     X_bal = balanced_df['message']
     
     category_names_bal = list(Y_bal.columns)
-    category_counts_bal = list(balanced_df.groupby('id').agg('sum', axis = 0).values) 
+    category_counts_bal = list(Y_bal.sum(axis = 0).values) 
     
     Y_long_bal = pd.melt(Y_bal.reset_index(), id_vars='index')
     Y_long_bal = Y_long_bal[Y_long_bal['value'] == 1]
