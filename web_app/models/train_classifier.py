@@ -61,6 +61,7 @@ def load_data(database_filepath):
         
         
     balanced_df = pd.concat(balanced_list, axis = 0)
+    balanced_df.to_csv('./data/balanced_df.csv')
     
     clean_messages = []
     for i in balanced_df['message']:

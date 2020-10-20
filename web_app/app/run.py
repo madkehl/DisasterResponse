@@ -70,7 +70,7 @@ df = pd.read_sql_table('data/DisasterResponse.db', engine)
 
 # load model
 model = joblib.load("../models/classifier.pkl")
-
+balanced_df = pd.read_csv('../data/balanced_df.csv')
 
 # index webpage displays cool visuals and receives user input text for model
 @app.route('/')
@@ -140,12 +140,6 @@ def index():
     fig.update_layout(width = 1000, height = 1000, margin=dict(l=20, r=20, b=20, t=100),  showlegend = False)
 
     # create parallel visuals for the bootstrapped/rebalanced data
-    balanced_list = []
-    for i in category_names[1:len(category_names)-1]:
-        for_balance = df[df[i] == 1].reset_index(drop = True)
-        balanced_list.append(get_col_sample(for_balance, number_samples)) 
-        
-    balanced_df = pd.concat(balanced_list, axis = 0)
     
     agg_bal = balanced_df.drop(not_y, axis = 1)
     agg_bal_sum = list(agg_bal.sum(axis = 1).values)
