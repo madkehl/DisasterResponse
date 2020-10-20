@@ -70,7 +70,7 @@ df = pd.read_sql_table('data/DisasterResponse.db', engine)
 
 # load model
 model = joblib.load("../models/classifier.pkl")
-balanced_df = pd.read_csv('../data/balanced_df.csv')
+balanced_df = pd.read_csv('../data/balanced_df.csv', index_col = 0)
 
 # index webpage displays cool visuals and receives user input text for model
 @app.route('/')
